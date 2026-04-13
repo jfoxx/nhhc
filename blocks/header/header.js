@@ -115,7 +115,7 @@ function toggleMenu(nav, navSections, forceExpanded = null) {
 export default async function decorate(block) {
   // load nav as fragment
   const navMeta = getMetadata('nav');
-  const navPath = navMeta ? new URL(navMeta, window.location).pathname : '/nav';
+  const navPath = navMeta ? new URL(navMeta, window.location).pathname : '/nav/header';
   const fragment = await loadFragment(navPath);
 
   // decorate nav DOM
@@ -131,11 +131,38 @@ export default async function decorate(block) {
   });
 
   const navBrand = nav.querySelector('.nav-brand');
-  const brandLink = navBrand.querySelector('.button');
-  if (brandLink) {
-    brandLink.className = '';
-    brandLink.closest('.button-container').className = '';
+  if (navBrand) {
+    const brandLink = navBrand.querySelector('.button');
+    if (brandLink) {
+      brandLink.className = '';
+      brandLink.closest('.button-container').className = '';
+    }
+    const brandP = navBrand.querySelector('p');
+    if (brandP) {
+      const pic = brandP.querySelector('picture');
+      const textContent = brandP.textContent.trim();
+      if (pic && textContent) {
+        brandP.textContent = '';
+        brandP.append(pic);
+        const title = document.createElement('span');
+        title.className = 'nav-brand-title';
+        title.textContent = textContent;
+        brandP.append(title);
+      }
+    }
   }
+
+  let navTools = nav.querySelector('.nav-tools');
+  if (!navTools) {
+    navTools = document.createElement('div');
+    navTools.classList.add('nav-tools');
+    nav.append(navTools);
+  }
+  navTools.innerHTML = `<a href="#" class="nav-social-btn" aria-label="Social Media">Social Media</a>
+    <form class="nav-search-form" role="search" action="/search" method="get">
+      <input type="search" class="nav-search-input" name="q" placeholder="" aria-label="Search">
+      <button type="submit" class="nav-search-btn">Search</button>
+    </form>`;
 
   const navSections = nav.querySelector('.nav-sections');
   if (navSections) {
