@@ -1,0 +1,91 @@
+/* Hero */
+body.interior-landing main > .interior-landing-hero {
+  position: relative;
+  margin: 0;
+  line-height: 0;
+}
+
+body.interior-landing main > .interior-landing-hero picture {
+  display: block;
+}
+
+body.interior-landing main > .interior-landing-hero img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+
+body.interior-landing main > .interior-landing-hero .interior-landing-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 24px;
+  background-color: var(--nhhc-navy);
+  color: white;
+  line-height: 1.3;
+}
+
+body.interior-landing main > .interior-landing-hero .hero-breadcrumb-label {
+  font-size: var(--body-font-size-xs);
+  opacity: 0.8;
+}
+
+body.interior-landing main > .interior-landing-hero .hero-breadcrumb-title {
+  font-family: var(--heading-font-family);
+  font-size: var(--heading-font-size-l);
+  font-weight: 700;
+}
+
+/* Columns */
+body.interior-landing main > .interior-landing-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin: 0;
+}
+
+body.interior-landing main > .interior-landing-columns > .aside {
+  margin: 0;
+  padding: 0;
+  background-color: var(--nhhc-light-gray);
+}
+
+body.interior-landing main > .interior-landing-columns > .section {
+  margin: 40px 0;
+}
+
+body.interior-landing main > .interior-landing-columns > .section > div {
+  padding: 0 24px;
+}
+
+@media (width >= 900px) {
+  body.interior-landing main > .interior-landing-hero img {
+    height: 450px;
+  }
+
+  body.interior-landing main > .interior-landing-hero .interior-landing-hero-overlay {
+    padding: 20px 32px;
+  }
+
+  body.interior-landing main > .interior-landing-hero .hero-breadcrumb-title {
+    font-size: var(--heading-font-size-xl);
+  }
+
+  body.interior-landing main > .interior-landing-columns {
+    grid-template-columns: 25% 1fr;
+  }
+
+  body.interior-landing main > .interior-landing-columns > .aside {
+    grid-column: 1;
+    grid-row: 1 / -1;
+  }
+
+  body.interior-landing main > .interior-landing-columns > .section {
+    grid-column: 2;
+  }
+
+  body.interior-landing main > .interior-landing-columns > .section > div {
+    padding: 0 32px;
+  }
+}

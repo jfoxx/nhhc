@@ -10,10 +10,16 @@
 .cards > ul > li {
   border: 1px solid #dadada;
   background-color: var(--background-color);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .cards .cards-card-body {
   margin: 16px;
+
+  a {
+    color: var(--nhhc-brown);
+  }
 }
 
 .cards .cards-card-image {
@@ -24,4 +30,34 @@
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
+}
+
+/* text-top variant: body above image, no border */
+.cards.text-top > ul > li {
+  display: flex;
+  flex-direction: column-reverse;
+  border: none;
+  justify-content: space-between;
+}
+
+.cards.text-top > ul > li img {
+  aspect-ratio: auto;
+}
+
+.cards.text-top .cards-card-body {
+  margin: 0 0 8px;
+}
+
+.cards.text-top .cards-card-body p:first-child {
+  font-family: var(--heading-font-family);
+  font-size: var(--heading-font-size-l);
+  font-weight: 700;
+  line-height: 1.2;
+  color: #8b1a1a;
+  margin-top: 0;
+}
+
+.cards.text-top .cards-card-body p:last-child {
+  font-size: var(--body-font-size-s);
+  color: var(--text-color);
 }

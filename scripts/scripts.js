@@ -1,11 +1,13 @@
 import {
   buildBlock,
+  getMetadata,
   loadHeader,
   loadFooter,
   decorateIcons,
   decorateSections,
   decorateBlocks,
   decorateTemplateAndTheme,
+  toClassName,
   waitForFirstImage,
   loadSection,
   loadSections,
@@ -74,44 +76,6 @@ function buildAutoBlocks(main) {
   }
 }
 
-/**
- * Decorates formatted links to style them as buttons.
- * @param {HTMLElement} main The main container element
- */
-function decorateButtons(main) {
-  main.querySelectorAll('p a[href]').forEach((a) => {
-    a.title = a.title || a.textContent;
-    const p = a.closest('p');
-    const text = a.textContent.trim();
-
-    // quick structural checks
-    if (a.querySelector('img') || p.textContent.trim() !== text) return;
-
-    // skip URL display links
-    try {
-      if (new URL(a.href).href === new URL(text, window.location).href) return;
-    } catch { /* continue */ }
-
-    // require authored formatting for buttonization
-    const strong = a.closest('strong');
-    const em = a.closest('em');
-    if (!strong && !em) return;
-
-    p.className = 'button-wrapper';
-    a.className = 'button';
-    if (strong && em) { // high-impact call-to-action
-      a.classList.add('accent');
-      const outer = strong.contains(em) ? strong : em;
-      outer.replaceWith(a);
-    } else if (strong) {
-      a.classList.add('primary');
-      strong.replaceWith(a);
-    } else {
-      a.classList.add('secondary');
-      em.replaceWith(a);
-    }
-  });
-}
 
 /**
  * Decorates the main element.
@@ -123,7 +87,22 @@ export function decorateMain(main) {
   buildAutoBlocks(main);
   decorateSections(main);
   decorateBlocks(main);
-  decorateButtons(main);
+}
+
+async function loadTemplate(doc) {
+  const template = toClassName(getMetadata('template'));
+  if (!template) return;
+  try {
+    const cssLoaded = loadCSS(`${window.hlx.codeBasePath}/templates/${template}/${template}.css`);
+    const mod = await import(`../templates/${template}/${template}.js`);
+    if (mod.default) {
+      await mod.default(doc);
+    }
+    await cssLoaded;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(`Failed to load template: ${template}`, error);
+  }
 }
 
 /**
@@ -139,6 +118,8 @@ async function loadEager(doc) {
     document.body.classList.add('appear');
     await loadSection(main.querySelector('.section'), waitForFirstImage);
   }
+
+  await loadTemplate(doc);
 
   try {
     /* if desktop (proxy for fast connection) or fonts already loaded, load fonts.css */
