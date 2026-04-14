@@ -109,7 +109,7 @@ header nav .nav-hamburger-icon::before,
 header nav .nav-hamburger-icon::after {
   content: '';
   position: absolute;
-  background: #fff;
+  background: var(--nhhc-navy);
 }
 
 header nav[aria-expanded='false'] .nav-hamburger-icon,
@@ -117,7 +117,7 @@ header nav[aria-expanded='false'] .nav-hamburger-icon::before,
 header nav[aria-expanded='false'] .nav-hamburger-icon::after {
   height: 2px;
   border-radius: 2px;
-  background: #fff;
+  background: var(--nhhc-navy);
 }
 
 header nav[aria-expanded='false'] .nav-hamburger-icon::before {
@@ -141,6 +141,7 @@ header nav[aria-expanded='true'] .nav-hamburger-icon::after {
   width: 24px;
   height: 2px;
   border-radius: 2px;
+  background: var(--nhhc-navy);
 }
 
 header nav[aria-expanded='true'] .nav-hamburger-icon::after {
@@ -163,6 +164,7 @@ header .nav-brand {
   align-items: center;
   gap: 12px;
   padding: 12px 0;
+  margin-left: 12px;
 }
 
 header nav .nav-brand p {
@@ -172,7 +174,7 @@ header nav .nav-brand p {
 }
 
 header nav .nav-brand img {
-  width: 70px;
+  width: 50px;
   height: auto;
 }
 
@@ -184,7 +186,12 @@ header nav .nav-brand .nav-brand-title {
   color: var(--nhhc-navy);
 }
 
+
 @media (width >= 900px) {
+  header .nav-brand {
+    margin-left: 0;
+  }
+
   header nav .nav-brand img {
     width: 110px;
   }
@@ -200,12 +207,16 @@ header nav .nav-sections {
   grid-area: sections;
   display: none;
   visibility: hidden;
+  font-family: var(--heading-font-family);
 }
 
 header nav[aria-expanded='true'] .nav-sections {
   display: block;
   visibility: visible;
   align-self: start;
+  background-color: var(--nhhc-navy-dark);
+  padding: 16px;
+  color: #fff;
 }
 
 header nav .nav-sections ul {
@@ -218,12 +229,57 @@ header nav .nav-sections ul > li {
   font-weight: 500;
 }
 
+header nav .nav-sections ul > li:first-child {
+  border-bottom: 1px solid rgb(255 255 255 / 25%);
+  padding-bottom: 12px;
+}
+
 header nav .nav-sections ul > li > ul {
+  display: none;
   margin-top: 0;
 }
 
+header nav .nav-sections ul > li[aria-expanded='true'] > ul {
+  display: block;
+}
+
+/* stylelint-disable-next-line no-descending-specificity */
 header nav .nav-sections ul > li > ul > li {
   font-weight: 400;
+}
+
+@media (width < 900px) {
+  header nav[aria-expanded='true'] .nav-sections .default-content-wrapper > ul > li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgb(255 255 255 / 15%);
+    cursor: pointer;
+  }
+
+  header nav[aria-expanded='true'] .nav-sections .nav-drop > a {
+    display: block;
+  }
+
+  header nav[aria-expanded='true'] .nav-sections .nav-drop > a::after {
+    content: '+';
+    float: right;
+    font-size: 18px;
+    font-weight: 300;
+  }
+
+  header nav[aria-expanded='true'] .nav-sections .nav-drop[aria-expanded='true'] > a::after {
+    content: '−';
+  }
+
+  /* stylelint-disable-next-line no-descending-specificity */
+  header nav .nav-sections .nav-subdrop > ul {
+    display: none;
+  }
+
+  /* stylelint-disable-next-line no-descending-specificity */
+  header nav .nav-sections .nav-subdrop[aria-expanded='true'] > ul {
+    display: block;
+    padding-left: 16px;
+  }
 }
 
 @media (width >= 900px) {
@@ -294,11 +350,53 @@ header nav .nav-sections ul > li > ul > li {
     left: 0;
     width: 220px;
     top: 100%;
-    padding: 12px 16px;
+    padding: 12px 0;
     background-color: var(--nhhc-navy-dark);
     white-space: initial;
     z-index: 10;
     border-top: 2px solid rgb(255 255 255 / 20%);
+  }
+
+  header nav .nav-sections .default-content-wrapper > ul > li[aria-expanded='true'] > ul > li {
+    padding-left: 16px;
+  }
+
+  header nav .nav-sections .default-content-wrapper > ul > li[aria-expanded='true'] > ul > li:hover, 
+  header nav .nav-sections .default-content-wrapper > ul > li[aria-expanded='true'] > ul > li[aria-expanded='true'] {
+    background-color: var(--nhhc-teal);
+  }
+
+  header nav .nav-sections .nav-subdrop {
+    position: relative;
+  }
+
+  header nav .nav-sections .nav-subdrop > a::after {
+    content: '›';
+    margin-left: 6px;
+    font-size: 16px;
+  }
+
+  /* stylelint-disable-next-line no-descending-specificity */
+  header nav .nav-sections .nav-subdrop > ul {
+    display: none;
+  }
+
+  /* stylelint-disable-next-line no-descending-specificity */
+  header nav .nav-sections .nav-subdrop[aria-expanded='true'] > ul {
+    display: block;
+    position: absolute;
+    left: 100%;
+    top: -12px;
+    width: 220px;
+    padding: 12px 16px;
+    background-color: var(--nhhc-navy-dark);
+    border-left: 2px solid rgb(255 255 255 / 20%);
+    z-index: 11;
+  }
+
+  /* stylelint-disable-next-line no-descending-specificity */
+  header nav .nav-sections .nav-subdrop[aria-expanded='true'] > ul > li {
+    padding: 8px 0;
   }
 }
 

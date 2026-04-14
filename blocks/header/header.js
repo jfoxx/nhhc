@@ -76,7 +76,7 @@ function toggleMenu(nav, navSections, forceExpanded = null) {
   const button = nav.querySelector('.nav-hamburger button');
   document.body.style.overflowY = (expanded || isDesktop.matches) ? '' : 'hidden';
   nav.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-  toggleAllNavSections(navSections, expanded || isDesktop.matches ? 'false' : 'true');
+  toggleAllNavSections(navSections, 'false');
   button.setAttribute('aria-label', expanded ? 'Open navigation' : 'Close navigation');
   // enable nav dropdown keyboard accessibility
   if (navSections) {
@@ -166,14 +166,46 @@ export default async function decorate(block) {
 
   const navSections = nav.querySelector('.nav-sections');
   if (navSections) {
+    navSections.querySelectorAll('li').forEach((li) => {
+      const subUl = li.querySelector(':scope > ul');
+      if (!subUl) return;
+
+      const link = li.querySelector(':scope > a');
+      if (link) {
+        const mainItem = document.createElement('li');
+        const mainLink = document.createElement('a');
+        mainLink.href = link.href;
+        mainLink.textContent = `${link.textContent.trim()} - Main`;
+        mainItem.append(mainLink);
+        subUl.prepend(mainItem);
+
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+        });
+      }
+    });
+
     navSections.querySelectorAll(':scope .default-content-wrapper > ul > li').forEach((navSection) => {
       if (navSection.querySelector('ul')) navSection.classList.add('nav-drop');
       navSection.addEventListener('click', () => {
-        if (isDesktop.matches) {
-          const expanded = navSection.getAttribute('aria-expanded') === 'true';
-          toggleAllNavSections(navSections);
-          navSection.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-        }
+        const expanded = navSection.getAttribute('aria-expanded') === 'true';
+        navSections.querySelectorAll('.nav-subdrop[aria-expanded="true"]').forEach((s) => s.setAttribute('aria-expanded', 'false'));
+        toggleAllNavSections(navSections);
+        navSection.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      });
+    });
+
+    navSections.querySelectorAll('.nav-drop > ul > li').forEach((li) => {
+      const subUl = li.querySelector(':scope > ul');
+      if (!subUl) return;
+      li.classList.add('nav-subdrop');
+      li.setAttribute('aria-expanded', 'false');
+      li.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const wasOpen = li.getAttribute('aria-expanded') === 'true';
+        li.closest('.nav-drop').querySelectorAll('.nav-subdrop[aria-expanded="true"]').forEach((s) => s.setAttribute('aria-expanded', 'false'));
+        li.setAttribute('aria-expanded', wasOpen ? 'false' : 'true');
       });
     });
   }
