@@ -1,20 +1,65 @@
 footer {
-  background-color: var(--light-color);
-  font-size: var(--body-font-size-xs);
-}
-
-footer .footer > div {
-  margin: auto;
   max-width: 1200px;
-  padding: 40px 24px 24px;
+  margin: 0 auto;
+  box-shadow: 6px 0 12px -2px rgb(0 0 0 / 15%), -6px 0 12px -2px rgb(0 0 0 / 15%);
+  font-size: var(--body-font-size-xs);
 }
 
 footer .footer p {
   margin: 0;
 }
 
+footer .footer img {
+  max-width: 200px;
+  height: auto;
+}
+
+footer .footer > div > div:first-child {
+  background-color: var(--nhhc-navy-dark);
+  color: #fff;
+}
+
+footer .footer > div > div:first-child .default-content-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  place-items: center;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+footer .footer > div > div:first-child .default-content-wrapper p:nth-child(2) {
+  line-height: 1.8;
+}
+
+footer .footer > div > div:last-child {
+  background-color: #fff;
+}
+
+footer .footer > div > div:last-child .default-content-wrapper {
+  padding: 16px 24px;
+  text-align: center;
+  line-height: 1.8;
+  color: var(--dark-color);
+}
+
+footer .footer > div > div:last-child a {
+  color: var(--nhhc-navy);
+  text-decoration: none;
+}
+
+footer .footer > div > div:last-child a:hover {
+  text-decoration: underline;
+}
+
 @media (width >= 900px) {
-  footer .footer > div {
-    padding: 40px 32px 24px;
+  footer .footer > div > div:first-child .default-content-wrapper {
+    grid-template-columns: auto 50% auto;
+    text-align: left;
+    padding: 40px 32px;
+  }
+
+  footer .footer > div > div:last-child .default-content-wrapper {
+    padding: 16px 32px;
   }
 }
