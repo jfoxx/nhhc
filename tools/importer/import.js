@@ -45,9 +45,12 @@ const createMetadataBlock = (main, document, url) => {
   const inlineMeta = extractInlineMetadata(main);
   Object.assign(meta, inlineMeta);
 
-  const tihTitle = main.querySelector('div.title');
-  if (tihTitle && tihTitle.textContent.trim() === 'Today in Naval History') {
+  if (main.dataset.tihDetected) {
     meta.template = 'today-in-history';
+    const synopsis = main.querySelector('.synopsis');
+    if (synopsis) {
+      meta.Description = synopsis.textContent.trim();
+    }
   } else if (main.querySelector('#textImageHeader')) {
     meta.template = 'interior-landing';
   } else {
@@ -72,6 +75,11 @@ const createMetadataBlock = (main, document, url) => {
 export default {
   transformDOM: ({ document, url }) => {
     const main = document.getElementById('mainContainer');
+
+    const tihCheck = main.querySelector('div.title');
+    if (tihCheck && tihCheck.textContent.trim() === 'Today in Naval History') {
+      main.dataset.tihDetected = 'true';
+    }
 
     WebImporter.DOMUtils.remove(main, [
       'header',

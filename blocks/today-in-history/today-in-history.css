@@ -1,0 +1,83 @@
+
+.today-in-history-wrapper {
+  border-top: 4px solid var(--nhhc-navy);
+  padding-top: 24px;
+}
+
+.today-in-history {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.today-in-history .today-in-history-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 64px;
+  border: 2px solid var(--nhhc-navy);
+  overflow: hidden;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+
+.today-in-history .today-in-history-month {
+  display: block;
+  width: 100%;
+  padding: 4px 12px;
+  background-color: var(--nhhc-navy);
+  color: #fff;
+  font-size: var(--body-font-size-xs);
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.today-in-history .today-in-history-day {
+  display: block;
+  padding: 6px 12px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--nhhc-navy);
+  text-align: center;
+  line-height: 1;
+}
+
+.today-in-history .today-in-history-body {
+  flex: 1;
+  min-width: 200px;
+}
+
+.today-in-history .today-in-history-body strong {
+  font-family: var(--heading-font-family);
+  font-size: var(--body-font-size-l);
+  color: var(--nhhc-navy);
+}
+
+.today-in-history .today-in-history-body p {
+  margin: 4px 0 0;
+  font-size: var(--body-font-size-s);
+  line-height: 1.5;
+}
+
+.today-in-history .today-in-history-cta {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: var(--body-font-size-s);
+  color: var(--nhhc-navy);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.today-in-history .today-in-history-cta:hover {
+  text-decoration: underline;
+}
+
+@media (width >= 900px) {
+  .today-in-history {
+    flex-wrap: nowrap;
+    padding: 16px 32px;
+  }
+}

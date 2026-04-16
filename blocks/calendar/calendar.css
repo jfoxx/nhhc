@@ -1,0 +1,69 @@
+.calendar {
+  font-size: var(--body-font-size-xs);
+  max-width: 280px;
+}
+
+.calendar .calendar-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.calendar .calendar-prev,
+.calendar .calendar-next {
+  background: none;
+  border: none;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--nhhc-brown);
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.calendar .calendar-month-label {
+  font-family: var(--heading-font-family);
+  font-weight: 700;
+  font-size: var(--body-font-size-m);
+}
+
+.calendar .calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  gap: 2px 0;
+  line-height: 1.8;
+}
+
+.calendar .calendar-blank {
+  display: block;
+}
+
+.calendar .calendar-day {
+  display: block;
+  text-decoration: none;
+  color: var(--dark-color);
+}
+
+.calendar .calendar-day:hover {
+  background-color: var(--nhhc-light-gray);
+}
+
+.calendar .calendar-today {
+  background-color: var(--dark-color);
+  color: #fff;
+}
+
+.calendar .calendar-year-link {
+  display: block;
+  margin-top: 12px;
+  font-family: var(--heading-font-family);
+  font-weight: 700;
+  font-size: var(--body-font-size-m);
+  color: var(--nhhc-brown);
+  text-decoration: none;
+}
+
+.calendar .calendar-year-link:hover {
+  text-decoration: underline;
+}

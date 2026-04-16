@@ -23,10 +23,10 @@
 
   /* colors */
   --background-color: white;
-  --light-color: #f8f8f8;
+  --light-color: #f0f0f0;
   --dark-color: #505050;
   --text-color: #131313;
-  --link-color: #3b63fb;
+  --link-color: var(--nhhc-brown);
   --link-hover-color: #1d3ecf;
 
   /* fonts */
@@ -34,6 +34,8 @@
   --heading-font-family: 'Roboto Slab', 'Roboto Slab-fallback', serif;
 
   /* body sizes */
+  --body-font-size-xl: 44px;
+  --body-font-size-l: 32px;
   --body-font-size-m: 22px;
   --body-font-size-s: 19px;
   --body-font-size-xs: 17px;
@@ -351,4 +353,21 @@ main .section.highlight {
   background-color: var(--light-color);
   margin: 0;
   padding: 40px 0;
+}
+
+main .section.band-heading {
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 24px 32px;
+    background-color: var(--nhhc-navy);
+    color: #fff;
+  }
+}
+
+
+@media (width >= 900px) {
+  main > .section.unbound > div {
+    padding: 0;
+  }
 }
