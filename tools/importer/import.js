@@ -45,7 +45,14 @@ const createMetadataBlock = (main, document, url) => {
   const inlineMeta = extractInlineMetadata(main);
   Object.assign(meta, inlineMeta);
 
-  meta.template = main.querySelector('#textImageHeader') ? 'interior-landing' : 'left-aside';
+  const tihTitle = main.querySelector('div.title');
+  if (tihTitle && tihTitle.textContent.trim() === 'Today in Naval History') {
+    meta.template = 'today-in-history';
+  } else if (main.querySelector('#textImageHeader')) {
+    meta.template = 'interior-landing';
+  } else {
+    meta.template = 'left-aside';
+  }
 
   if (meta.template === 'interior-landing' && url) {
     const segments = new URL(url).pathname.replace(/\.html$/, '').replace(/\/$/, '').split('/').filter(Boolean);
@@ -119,6 +126,47 @@ export default {
       }
     }
 
+    const tihTitleDiv = main.querySelector('div.title');
+    if (tihTitleDiv && tihTitleDiv.textContent.trim() === 'Today in Naval History') {
+      const h1 = document.createElement('h1');
+      h1.textContent = tihTitleDiv.textContent.trim();
+      tihTitleDiv.replaceWith(h1);
+
+      const dateDiv = main.querySelector('div.date');
+      if (dateDiv) {
+        const h2 = document.createElement('h2');
+        h2.textContent = dateDiv.textContent.trim();
+        const hr = document.createElement('hr');
+        dateDiv.replaceWith(h2, hr);
+      }
+
+      const rightContent = main.querySelector('.rightContent');
+      if (rightContent) rightContent.remove();
+
+      main.querySelectorAll('.todayInHistoryListDate').forEach((el) => {
+        const h3 = document.createElement('h3');
+        h3.textContent = el.textContent.trim();
+        el.replaceWith(h3);
+      });
+
+      const leftContent = main.querySelector('.leftContent');
+      if (leftContent) {
+        const firstCol = leftContent.querySelector('.column.first');
+        const lastCol = leftContent.querySelector('.column.last');
+        if (firstCol && lastCol) {
+          const firstDiv = document.createElement('div');
+          while (firstCol.firstChild) firstDiv.append(firstCol.firstChild);
+          const lastDiv = document.createElement('div');
+          while (lastCol.firstChild) lastDiv.append(lastCol.firstChild);
+          const cells = [['Columns'], [firstDiv, lastDiv]];
+          const block = WebImporter.DOMUtils.createTable(cells, document);
+          firstCol.after(block);
+          firstCol.remove();
+          lastCol.remove();
+        }
+      }
+    }
+
     createMetadataBlock(main, document, url);
 
     return main;
@@ -127,6 +175,7 @@ export default {
   // eslint-disable-next-line no-unused-vars
   generateDocumentPath: ({ document, url }) => {
     let p = new URL(url).pathname;
+    p = p.replace(/\.html$/, '');
     if (p.endsWith('/')) {
       p = `${p}index`;
     }
