@@ -5,35 +5,26 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-function excelDateToJS(serial) {
-  return new Date(Math.round((serial - 25569) * 86400 * 1000));
+function parseDate(text) {
+  const parts = text.trim().split(/\s+/);
+  if (parts.length < 2) return null;
+  const monthIndex = MONTHS.findIndex((m) => m.toLowerCase() === parts[0].toLowerCase());
+  const day = parseInt(parts[1], 10);
+  if (monthIndex < 0 || Number.isNaN(day)) return null;
+  return { month: monthIndex, day };
 }
 
 export default async function decorate(block) {
   const today = new Date();
   const todayMonth = today.getMonth();
   const todayDay = today.getDate();
-  // eslint-disable-next-line no-console
-  console.log(`[today-in-history] Looking for month=${todayMonth} day=${todayDay}`);
 
-  const allEntries = await ffetch('/today-in-history/query-index.json').all();
-  // eslint-disable-next-line no-console
-  console.log(`[today-in-history] Fetched ${allEntries.length} entries`);
-  if (allEntries.length > 0) {
-    // eslint-disable-next-line no-console
-    console.log('[today-in-history] Sample entry:', allEntries[0]);
-    const sampleDate = excelDateToJS(Number(allEntries[0].title));
-    // eslint-disable-next-line no-console
-    console.log(`[today-in-history] Sample decoded: title=${allEntries[0].title} -> ${sampleDate.toISOString()} month=${sampleDate.getUTCMonth()} day=${sampleDate.getUTCDate()}`);
-  }
-
-  const entry = allEntries.find((item) => {
-    const d = excelDateToJS(Number(item.title));
-    return d.getUTCMonth() === todayMonth && d.getUTCDate() === todayDay;
-  });
-
-  // eslint-disable-next-line no-console
-  console.log('[today-in-history] Matched entry:', entry);
+  const entry = await ffetch('/today-in-history/query-index.json')
+    .filter((item) => {
+      const d = parseDate(item.title);
+      return d && d.month === todayMonth && d.day === todayDay;
+    })
+    .first();
 
   if (!entry) return;
 

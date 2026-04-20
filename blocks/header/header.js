@@ -143,11 +143,15 @@ export default async function decorate(block) {
       const textContent = brandP.textContent.trim();
       if (pic && textContent) {
         brandP.textContent = '';
-        brandP.append(pic);
+        const homeLink = document.createElement('a');
+        homeLink.href = '/';
+        homeLink.className = 'nav-brand-link';
+        homeLink.append(pic);
         const title = document.createElement('span');
         title.className = 'nav-brand-title';
         title.textContent = textContent;
-        brandP.append(title);
+        homeLink.append(title);
+        brandP.append(homeLink);
       }
     }
   }

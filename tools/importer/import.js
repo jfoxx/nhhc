@@ -42,6 +42,15 @@ const createMetadataBlock = (main, document, url) => {
     meta.Image = el;
   }
 
+  const publishedDate = main.querySelector('#publishedDate');
+  if (publishedDate) {
+    const dateText = publishedDate.textContent.replace(/^Published:\s*/i, '').trim();
+    if (dateText) {
+      meta['Published Date'] = dateText;
+    }
+    publishedDate.remove();
+  }
+
   const inlineMeta = extractInlineMetadata(main);
   Object.assign(meta, inlineMeta);
 
@@ -51,6 +60,8 @@ const createMetadataBlock = (main, document, url) => {
     if (synopsis) {
       meta.Description = synopsis.textContent.trim();
     }
+  } else if (url && new URL(url).pathname.includes('/danfs/')) {
+    meta.template = 'danfs';
   } else if (main.querySelector('#textImageHeader')) {
     meta.template = 'interior-landing';
   } else {
@@ -95,6 +106,26 @@ export default {
       '.descriptionText',
       '#textImageTitle',
     ]);
+
+    main.querySelectorAll('.annotation-popup').forEach((el) => {
+      const clone = el.cloneNode(true);
+      const hideLink = clone.querySelector('a');
+      if (hideLink && hideLink.textContent.trim().toLowerCase() === 'hide') {
+        hideLink.remove();
+      }
+      if (!clone.textContent.trim()) {
+        el.remove();
+      }
+    });
+
+    main.querySelectorAll('.footnotes').forEach((el) => {
+      const clone = el.cloneNode(true);
+      const header = clone.querySelector('.footnoteHeader');
+      if (header) header.remove();
+      if (!clone.textContent.trim()) {
+        el.remove();
+      }
+    });
 
     main.querySelectorAll('div.altCap > p').forEach((p) => {
       const em = document.createElement('em');

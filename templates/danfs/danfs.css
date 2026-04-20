@@ -1,0 +1,72 @@
+body.danfs main h1 {
+  margin-top: 20px;
+}
+
+body.danfs main > .breadcrumb-band {
+  background-color: var(--nhhc-light-gray);
+  margin: 0;
+  padding: 0 24px;
+}
+
+body.danfs main > .danfs-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin: 0;
+}
+
+body.danfs main > .danfs-columns > .aside {
+  margin: 0;
+  padding: 24px;
+}
+
+body.danfs main > .danfs-columns > .aside dl {
+  margin: 0;
+}
+
+body.danfs main > .danfs-columns > .aside dt {
+  font-weight: 700;
+  font-size: var(--body-font-size-xs);
+  text-transform: uppercase;
+  margin-top: 16px;
+  opacity: 0.7;
+}
+
+body.danfs main > .danfs-columns > .aside dt:first-child {
+  margin-top: 0;
+}
+
+body.danfs main > .danfs-columns > .aside dd {
+  margin: 4px 0 0;
+  font-size: var(--body-font-size-s);
+}
+
+@media (width >= 900px) {
+  body.danfs main > .breadcrumb-band {
+    padding: 0 32px;
+  }
+
+  body.danfs main > .danfs-columns {
+    grid-template-columns: 35% 1fr;
+  }
+
+  body.danfs main > .danfs-columns > .aside {
+    grid-column: 1;
+    grid-row: 1 / -1;
+  }
+
+  body.danfs main > .danfs-columns > .section {
+    grid-column: 2;
+  }
+
+  body.danfs main > .danfs-columns > .danfs-published-date {
+    grid-column: 2;
+  }
+}
+
+body.danfs .danfs-published-date {
+  padding: 24px;
+  font-size: var(--body-font-size-xs);
+  font-style: italic;
+  color: var(--dark-color);
+  opacity: 0.7;
+}
