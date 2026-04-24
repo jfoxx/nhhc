@@ -1,0 +1,13 @@
+{
+  "project": "NHHC",
+  "plugins": [
+    {
+      "id": "media",
+      "title": "Media",
+      "url": "/tools/sidekick/media.html",
+      "isPalette": true,
+      "environments": ["edit", "preview", "dev", "live"],
+      "paletteRect": "bottom:24px;left:24px;height:min(480px,70vh);width:min(420px,92vw);"
+    }
+  ]
+}

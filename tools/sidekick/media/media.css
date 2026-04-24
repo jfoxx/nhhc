@@ -1,0 +1,117 @@
+/* Palette runs in an iframe; keep styles self-contained */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--spectrum-font-family, 'Adobe Clean', adobe-clean, 'Source Sans Pro', -apple-system, sans-serif);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--spectrum-gray-800, #2c2c2c);
+  background: var(--spectrum-gray-75, #fafafa);
+  height: 100%;
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+.media-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  min-height: 100%;
+}
+
+.media-picker-header {
+  flex: 0 0 auto;
+}
+
+.media-picker-title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.media-picker-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--spectrum-gray-700, #464646);
+}
+
+.media-picker-search {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--spectrum-gray-400, #d0d0d0);
+  border-radius: 4px;
+  font: inherit;
+}
+
+.media-picker-status {
+  margin: 0;
+  font-size: 12px;
+  color: var(--spectrum-gray-600, #5c5c5c);
+}
+
+.media-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.media-picker-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  background: var(--spectrum-gray-50, #fff);
+  border: 1px solid var(--spectrum-gray-200, #e6e6e6);
+  border-radius: 4px;
+}
+
+.media-picker-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.media-picker-item-title {
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.media-picker-item-path {
+  font-size: 11px;
+  color: var(--spectrum-gray-600, #5c5c5c);
+  word-break: break-all;
+}
+
+.media-picker-copy {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  border: 1px solid var(--spectrum-gray-400, #d0d0d0);
+  background: var(--spectrum-gray-75, #fafafa);
+}
+
+.media-picker-copy:hover {
+  background: var(--spectrum-gray-100, #f0f0f0);
+}
+
+.media-picker-empty {
+  padding: 12px;
+  color: var(--spectrum-gray-600, #5c5c5c);
+}

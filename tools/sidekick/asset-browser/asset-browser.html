@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asset browser</title>
+  <style>
+    /* Spectrum-aligned UI for AEM Sidekick palettes (light default; dark when ?theme=dark) */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font: 'Adobe Clean', adobe-clean, 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --bg: #f5f5f5;
+      --surface: #fff;
+      --surface-raised: #fafafa;
+      --border: #d0d0d0;
+      --border-subtle: #e6e6e6;
+      --text: #2c2c2c;
+      --text-secondary: #464646;
+      --muted: #707070;
+      --focus: #0265dc;
+      --focus-ring: rgb(2 101 220 / 25%);
+      --accent: #0265dc;
+      --accent-hover: #0054b6;
+      --danger: #d31510;
+      --danger-bg: rgb(211 21 16 / 8%);
+      --success: #007a4d;
+      --success-bg: rgb(0 122 77 / 8%);
+      --radius: 4px;
+      --radius-lg: 6px;
+      --shadow: 0 1px 2px rgb(0 0 0 / 6%);
+    }
+
+    body.theme-dark {
+      --bg: #2c2c2c;
+      --surface: #1e1e1e;
+      --surface-raised: #252525;
+      --border: #464646;
+      --border-subtle: #3d3d3d;
+      --text: #f5f5f5;
+      --text-secondary: #d0d0d0;
+      --muted: #a3a3a3;
+      --focus: #5eaaf7;
+      --focus-ring: rgb(94 170 247 / 35%);
+      --accent: #378ef0;
+      --accent-hover: #5eaaf7;
+      --danger: #f75b5b;
+      --danger-bg: rgb(247 91 91 / 12%);
+      --success: #2d9d78;
+      --success-bg: rgb(45 157 120 / 12%);
+      --shadow: 0 1px 3px rgb(0 0 0 / 35%);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.45;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      flex-shrink: 0;
+      padding: 14px 16px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow);
+    }
+
+    .header-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .header-sub {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      flex-shrink: 0;
+      padding: 0 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .tab {
+      flex: 1;
+      max-width: 50%;
+      padding: 10px 12px 12px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .tab:hover {
+      color: var(--text);
+      background: var(--surface-raised);
+    }
+
+    .tab:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: -2px;
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      background: transparent;
+    }
+
+    .panel {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .panel.active { display: flex; }
+
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 12px 14px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 0;
+      height: 32px;
+      padding: 0 10px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .search-input:hover { border-color: var(--muted); }
+
+    .search-input:focus {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 2px var(--focus-ring);
+      background: var(--surface);
+    }
+
+    .search-input::placeholder { color: var(--muted); }
+
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+      padding: 2px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      flex-shrink: 0;
+    }
+
+    .view-btn {
+      width: 32px;
+      height: 28px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius);
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .view-btn:hover { color: var(--text); background: rgb(0 0 0 / 4%); }
+
+    body.theme-dark .view-btn:hover { background: rgb(255 255 255 / 6%); }
+
+    .view-btn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 1px;
+    }
+
+    .view-btn.active {
+      color: var(--accent);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .view-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+    .asset-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px;
+    }
+
+    .asset-scroll::-webkit-scrollbar { width: 8px; }
+    .asset-scroll::-webkit-scrollbar-track { background: transparent; }
+    .asset-scroll::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .asset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    @media (width >= 400px) {
+      .asset-grid { gap: 10px; }
+    }
+
+    .asset-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .asset-grid .asset-item {
+      aspect-ratio: 1;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      cursor: default;
+      position: relative;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .asset-grid .asset-item:hover {
+      border-color: var(--border);
+      box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+    }
+
+    body.theme-dark .asset-grid .asset-item:hover {
+      box-shadow: 0 2px 10px rgb(0 0 0 / 25%);
+    }
+
+    .asset-grid .asset-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .asset-grid .asset-item .asset-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgb(0 0 0 / 72%);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-end;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      padding: 10px;
+    }
+
+    .asset-grid .asset-item:hover .asset-overlay,
+    .asset-grid .asset-item:focus-within .asset-overlay {
+      opacity: 1;
+    }
+
+    .asset-overlay .asset-name {
+      font-size: 11px;
+      color: #f5f5f5;
+      text-align: left;
+      word-break: break-word;
+      line-height: 1.35;
+      max-height: 2.7em;
+      overflow: hidden;
+    }
+
+    .asset-overlay .copy-btn {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .asset-overlay .copy-btn:hover {
+      background: var(--surface-raised);
+      border-color: var(--focus);
+    }
+
+    .asset-list .asset-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      transition: border-color 0.15s ease;
+    }
+
+    .asset-list .asset-item:hover { border-color: var(--border); }
+
+    .asset-list .asset-item img {
+      width: 44px;
+      height: 44px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      flex-shrink: 0;
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .asset-list .asset-meta { flex: 1; min-width: 0; }
+
+    .asset-list .asset-title {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text);
+    }
+
+    .asset-list .asset-tags {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .asset-list .copy-btn {
+      flex-shrink: 0;
+      height: 32px;
+      padding: 0 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .asset-list .copy-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .state-msg {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 32px 20px;
+    }
+
+    .state-msg .state-detail {
+      font-size: 12px;
+      color: var(--text-secondary);
+      max-width: 280px;
+      line-height: 1.4;
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--border-subtle);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .upload-inner {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .upload-inner::-webkit-scrollbar { width: 8px; }
+    .upload-inner::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .dropzone {
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+      position: relative;
+      flex-shrink: 0;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .dropzone:hover,
+    .dropzone.drag-over {
+      border-color: var(--accent);
+      background: var(--surface-raised);
+    }
+
+    .dropzone:focus-within {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .dropzone input[type=file] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .dropzone-icon {
+      width: 36px;
+      height: 36px;
+      color: var(--muted);
+    }
+
+    .dropzone-icon svg {
+      width: 100%;
+      height: 100%;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+    }
+
+    .dropzone-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .dropzone-label span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .dropzone-preview {
+      width: 100%;
+      max-height: 140px;
+      object-fit: contain;
+      border-radius: var(--radius);
+      display: none;
+    }
+
+    .dropzone-preview.visible { display: block; }
+
+    .dropzone-filename {
+      font-size: 12px;
+      color: var(--text);
+      text-align: center;
+      word-break: break-all;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      resize: vertical;
+      min-height: 36px;
+    }
+
+    .field textarea { min-height: 72px; }
+
+    .field input:hover,
+    .field textarea:hover { border-color: var(--muted); }
+
+    .field input:focus,
+    .field textarea:focus {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 2px var(--focus-ring);
+    }
+
+    .field input::placeholder,
+    .field textarea::placeholder { color: var(--muted); }
+
+    .field .hint {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .upload-btn {
+      width: 100%;
+      min-height: 36px;
+      padding: 10px 16px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-lg);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease, opacity 0.15s ease;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .upload-btn:hover:not(:disabled) { background: var(--accent-hover); }
+
+    .upload-btn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .upload-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .progress-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .progress-wrap.visible { display: flex; }
+
+    .progress-bar-bg {
+      height: 4px;
+      background: var(--border-subtle);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .result-box {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      background: var(--success-bg);
+      border: 1px solid var(--success);
+      border-radius: var(--radius-lg);
+      padding: 12px 14px;
+      flex-shrink: 0;
+    }
+
+    .result-box.visible { display: flex; }
+
+    .result-box .result-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--success);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .result-box .result-path {
+      font-size: 13px;
+      color: var(--text);
+      word-break: break-all;
+      line-height: 1.4;
+    }
+
+    .result-copy-btn {
+      align-self: flex-start;
+      min-height: 32px;
+      padding: 0 14px;
+      background: var(--surface);
+      color: var(--success);
+      border: 1px solid var(--success);
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .result-copy-btn:hover {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .error-box {
+      display: none;
+      background: var(--danger-bg);
+      border: 1px solid var(--danger);
+      border-radius: var(--radius-lg);
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--danger);
+      line-height: 1.45;
+      flex-shrink: 0;
+    }
+
+    .error-box.visible { display: block; }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: var(--text);
+      color: var(--surface);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+      max-width: calc(100% - 32px);
+      text-align: center;
+    }
+
+    body.theme-dark .toast {
+      background: #f5f5f5;
+      color: #2c2c2c;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <h1 class="header-title">Asset browser</h1>
+    <p class="header-sub">Search published media or upload to your repository.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Asset browser views">
+    <button type="button" class="tab active" role="tab" aria-selected="true" data-tab="search" id="tab-search">Search</button>
+    <button type="button" class="tab" role="tab" aria-selected="false" data-tab="upload" id="tab-upload">Upload</button>
+  </div>
+
+  <!-- Search panel -->
+  <div class="panel active" id="panel-search" role="tabpanel" aria-labelledby="tab-search">
+    <div class="search-bar">
+      <input class="search-input" id="search-input" type="search" placeholder="Search by title or tag…" autocomplete="off">
+      <div class="view-toggle" role="group" aria-label="Result layout">
+        <button type="button" class="view-btn active" id="btn-grid" title="Grid view" aria-pressed="true">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        </button>
+        <button type="button" class="view-btn" id="btn-list" title="List view" aria-pressed="false">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="2" width="14" height="3" rx="1"/><rect x="1" y="7" width="14" height="3" rx="1"/><rect x="1" y="12" width="14" height="3" rx="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="asset-scroll" id="asset-scroll">
+      <div class="state-msg" id="search-loading">
+        <div class="spinner" aria-hidden="true"></div>
+        <span>Loading index…</span>
+      </div>
+      <div class="asset-grid" id="asset-container" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Upload panel -->
+  <div class="panel" id="panel-upload" role="tabpanel" aria-labelledby="tab-upload">
+    <div class="upload-inner">
+
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml">
+        <img class="dropzone-preview" id="preview-img" alt="">
+        <div class="dropzone-icon" id="dropzone-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="dropzone-label" id="dropzone-label">
+          <span>Choose file</span> or drag here
+        </div>
+        <div class="dropzone-filename" id="dropzone-filename" style="display:none"></div>
+      </div>
+
+      <div class="field">
+        <label>Title</label>
+        <input type="text" id="field-title" placeholder="Descriptive title for the asset">
+      </div>
+
+      <div class="field">
+        <label>Description</label>
+        <textarea id="field-description" rows="2" placeholder="Brief description of the image"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Tags</label>
+        <input type="text" id="field-tags" placeholder="landscape, nature, aerial">
+        <span class="hint">comma-separated</span>
+      </div>
+
+      <div class="error-box" id="upload-error"></div>
+
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-label" id="progress-label">uploading…</div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="result-box" id="result-box">
+        <div class="result-label">Published</div>
+        <div class="result-path" id="result-path"></div>
+        <button type="button" class="result-copy-btn" id="result-copy-btn">Copy URL</button>
+      </div>
+
+      <button type="button" class="upload-btn" id="upload-btn" disabled>Upload and publish</button>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Copied</div>
+
+<script>
+  (function applySidekickTheme() {
+    const theme = new URLSearchParams(window.location.search).get('theme');
+    if (theme === 'dark') document.body.classList.add('theme-dark');
+  }());
+
+  // Config
+  const API_UPLOAD_URL  = 'https://njrby7jjuf.execute-api.us-east-2.amazonaws.com/prod/generate-upload-url';
+  const API_PUBLISH_URL = 'https://njrby7jjuf.execute-api.us-east-2.amazonaws.com/prod/publish-asset';
+  const INDEX_URL       = 'https://main--nhhc--jfoxx.hlx.live/media-index.json';
+
+  let allAssets   = [];
+  let currentView = 'grid';
+  let selectedFile = null;
+
+  document.querySelectorAll('.tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const panelId = tab.dataset.tab;
+      document.querySelectorAll('.tab').forEach((t) => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      document.querySelectorAll('.panel').forEach((p) => p.classList.remove('active'));
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      document.getElementById(`panel-${panelId}`).classList.add('active');
+    });
+  });
+
+  // ── View toggle ────────────────────────────────────────
+  document.getElementById('btn-grid').addEventListener('click', () => setView('grid'));
+  document.getElementById('btn-list').addEventListener('click', () => setView('list'));
+
+  function setView(v) {
+    currentView = v;
+    const gridBtn = document.getElementById('btn-grid');
+    const listBtn = document.getElementById('btn-list');
+    gridBtn.classList.toggle('active', v === 'grid');
+    listBtn.classList.toggle('active', v === 'list');
+    gridBtn.setAttribute('aria-pressed', v === 'grid' ? 'true' : 'false');
+    listBtn.setAttribute('aria-pressed', v === 'list' ? 'true' : 'false');
+    renderAssets(filtered());
+  }
+
+  // ── Search ─────────────────────────────────────────────
+  document.getElementById('search-input').addEventListener('input', () => {
+    renderAssets(filtered());
+  });
+
+  function filtered() {
+    const q = document.getElementById('search-input').value.toLowerCase().trim();
+    if (!q) return allAssets;
+    return allAssets.filter(a =>
+      (a.title  || '').toLowerCase().includes(q) ||
+      (a.tags   || '').toLowerCase().includes(q) ||
+      (a['original-filename'] || '').toLowerCase().includes(q)
+    );
+  }
+
+  // ── Load index ─────────────────────────────────────────
+  async function loadIndex() {
+    try {
+      const res  = await fetch(`${INDEX_URL}?limit=500`);
+      if (!res.ok) throw new Error(`Index returned ${res.status}`);
+      const json = await res.json();
+      allAssets  = json.data || [];
+      renderAssets(allAssets);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      document.getElementById('search-loading').innerHTML = `
+        <span class="state-detail" style="color:var(--danger);font-weight:600">Could not load index</span>
+        <span class="state-detail">${esc(msg)}</span>`;
+    }
+  }
+
+  // ── Render assets ──────────────────────────────────────
+  function renderAssets(assets) {
+    const loading   = document.getElementById('search-loading');
+    const container = document.getElementById('asset-container');
+
+    loading.style.display   = 'none';
+    container.style.display = '';
+    container.className     = currentView === 'grid' ? 'asset-grid' : 'asset-list';
+    container.innerHTML     = '';
+
+    if (!assets.length) {
+      container.style.display = 'none';
+      loading.style.display   = 'flex';
+      loading.innerHTML       = '<span class="state-detail">No matching assets.</span>';
+      return;
+    }
+
+    assets.forEach(asset => {
+      const imgSrc  = asset['cloudfront-url'] || '';
+      const title   = asset.title || asset['original-filename'] || 'Untitled';
+      const tags    = asset.tags  || '';
+      const path    = asset.path  || '';
+
+      if (currentView === 'grid') {
+        container.insertAdjacentHTML('beforeend', `
+          <div class="asset-item" title="${esc(title)}">
+            <img src="${esc(imgSrc)}" alt="${esc(title)}" loading="lazy">
+            <div class="asset-overlay">
+              <button type="button" class="copy-btn" data-path="${esc(path)}">Copy URL</button>
+              <div class="asset-name">${esc(title)}</div>
+            </div>
+          </div>`);
+      } else {
+        container.insertAdjacentHTML('beforeend', `
+          <div class="asset-item">
+            <img src="${esc(imgSrc)}" alt="${esc(title)}" loading="lazy">
+            <div class="asset-meta">
+              <div class="asset-title">${esc(title)}</div>
+              <div class="asset-tags">${esc(tags)}</div>
+            </div>
+            <button type="button" class="copy-btn" data-path="${esc(path)}">Copy URL</button>
+          </div>`);
+      }
+    });
+
+    container.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        copyToClipboard(btn.dataset.path);
+      });
+    });
+  }
+
+  // ── Dropzone ───────────────────────────────────────────
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+
+  function handleFile(file) {
+    selectedFile = file;
+    const preview   = document.getElementById('preview-img');
+    const icon      = document.getElementById('dropzone-icon');
+    const label     = document.getElementById('dropzone-label');
+    const fname     = document.getElementById('dropzone-filename');
+
+    const url = URL.createObjectURL(file);
+    preview.src = url;
+    preview.classList.add('visible');
+    icon.style.display  = 'none';
+    label.style.display = 'none';
+    fname.textContent   = file.name;
+    fname.style.display = 'block';
+
+    // Pre-fill title from filename if empty
+    const titleField = document.getElementById('field-title');
+    if (!titleField.value) {
+      titleField.value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+    }
+
+    validateForm();
+    clearResult();
+  }
+
+  // ── Form validation ────────────────────────────────────
+  ['field-title','field-description','field-tags'].forEach(id => {
+    document.getElementById(id).addEventListener('input', validateForm);
+  });
+
+  function validateForm() {
+    const ready = selectedFile &&
+      document.getElementById('field-title').value.trim() &&
+      document.getElementById('field-description').value.trim() &&
+      document.getElementById('field-tags').value.trim();
+    document.getElementById('upload-btn').disabled = !ready;
+  }
+
+  // ── Upload & publish ───────────────────────────────────
+  document.getElementById('upload-btn').addEventListener('click', async () => {
+    const title       = document.getElementById('field-title').value.trim();
+    const description = document.getElementById('field-description').value.trim();
+    const tags        = document.getElementById('field-tags').value.trim();
+
+    clearError();
+    clearResult();
+    setProgress(true, 'Requesting upload URL…', 5);
+
+    try {
+      // 1. Get presigned URL
+      const urlRes = await fetch(API_UPLOAD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: selectedFile.name, contentType: selectedFile.type }),
+      });
+
+      const urlData = await urlRes.json();
+      if (!urlRes.ok) {
+        throw new Error(urlData.error || `HTTP ${urlRes.status}`);
+      }
+
+      setProgress(true, 'Uploading to S3…', 30);
+
+      // 2. PUT directly to S3
+      await uploadWithProgress(urlData.uploadUrl, selectedFile, (pct) => {
+        setProgress(true, 'Uploading to S3…', 30 + Math.round(pct * 0.5));
+      });
+
+      setProgress(true, 'Publishing to AEM…', 85);
+
+      // 3. Call publish-asset Lambda
+      const pubRes = await fetch(API_PUBLISH_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: urlData.fileName,
+          title,
+          description,
+          tags,
+        }),
+      });
+
+      const pubData = await pubRes.json();
+      if (!pubRes.ok) {
+        throw new Error(pubData.error || `HTTP ${pubRes.status}`);
+      }
+
+      setProgress(true, 'Done', 100);
+      setTimeout(() => setProgress(false), 600);
+
+      showResult(pubData.publishedPath);
+
+      // Refresh index so new asset appears in search
+      await loadIndex();
+
+    } catch (err) {
+      setProgress(false);
+      showError(err.message);
+    }
+  });
+
+  function uploadWithProgress(url, file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', url);
+      xhr.setRequestHeader('Content-Type', file.type);
+      xhr.upload.addEventListener('progress', e => {
+        if (e.lengthComputable) onProgress(e.loaded / e.total);
+      });
+      xhr.onload  = () => xhr.status < 300 ? resolve() : reject(new Error(`S3 upload failed: ${xhr.status}`));
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.send(file);
+    });
+  }
+
+  // ── UI helpers ─────────────────────────────────────────
+  function setProgress(visible, label = '', pct = 0) {
+    const wrap  = document.getElementById('progress-wrap');
+    const fill  = document.getElementById('progress-fill');
+    const lbl   = document.getElementById('progress-label');
+    const btn   = document.getElementById('upload-btn');
+    wrap.classList.toggle('visible', visible);
+    fill.style.width  = pct + '%';
+    lbl.textContent   = label;
+    btn.disabled      = visible;
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('upload-error');
+    box.textContent = msg;
+    box.classList.add('visible');
+  }
+
+  function clearError() {
+    const box = document.getElementById('upload-error');
+    box.textContent = '';
+    box.classList.remove('visible');
+  }
+
+  function showResult(path) {
+    const box  = document.getElementById('result-box');
+    const text = document.getElementById('result-path');
+    text.textContent = path;
+    box.classList.add('visible');
+    document.getElementById('result-copy-btn').onclick = () => copyToClipboard(path);
+  }
+
+  function clearResult() {
+    document.getElementById('result-box').classList.remove('visible');
+  }
+
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => showToast('Copied'));
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  // ── Init ───────────────────────────────────────────────
+  loadIndex();
+</script>
+</body>
+</html>

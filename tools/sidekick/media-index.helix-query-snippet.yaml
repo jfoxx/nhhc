@@ -1,0 +1,17 @@
+# Snippet: merge this `media` entry under `indices` in your root helix-query.yaml,
+# or follow your team’s process for custom indexes (see https://www.aem.live/developer/indexing ).
+# Adjust `include` so it matches the paths of published asset documents in your mount.
+# Activate the corresponding workbook/sheet in SharePoint or Google Drive, then publish.
+#
+# The Media Sidekick plugin reads JSON at: /media-index.json
+
+indices:
+  media:
+    include:
+      - '/assets/**'
+    target: /media-index.json
+    properties:
+      title:
+        select: head > meta[property="og:title"]
+        value: |
+          attribute(el, 'content')
