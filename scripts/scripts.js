@@ -16,17 +16,27 @@ import {
 } from './aem.js';
 
 const EDS_MEDIA_PATH = /^\/assets\/media_[a-f0-9]+/i;
-const EDS_MEDIA_URL_RE = /https?:\/\/[^\s<>"')]*\.aem\.live\/assets\/media_[a-f0-9]+(?:\.[a-z0-9]+)?(?:\?[^\s<>"')]*)?/gi;
+const EDS_MEDIA_HOSTS = /\.(?:aem\.live|aem\.page|hlx\.live|hlx\.page)$/i;
+const EDS_MEDIA_URL_RE = /https?:\/\/[^\s<>"')]*\.(?:aem|hlx)\.(?:live|page)\/assets\/media_[a-f0-9]+(?:\.[a-z0-9]+)?(?:\?[^\s<>"')]*)?/gi;
 const SKIP_TEXT_ANCESTORS = 'a, picture, script, style, code, pre, textarea, title, noscript';
 
 /**
+ * Accepts any href whose path is /assets/media_<hex>..., whether the href is
+ * a bare path (e.g. `/assets/media_abc.jpg`) or an absolute URL on an EDS
+ * host (`*.aem.live`, `*.aem.page`, `*.hlx.live`, `*.hlx.page`).
  * @param {string} href
  * @returns {boolean}
  */
-function isLiveEdsMediaAssetUrl(href) {
+function isEdsMediaAssetReference(href) {
+  if (!href) return false;
+  const trimmed = href.trim();
+  if (!trimmed || trimmed.startsWith('#') || /^(?:mailto:|tel:|javascript:)/i.test(trimmed)) return false;
+  if (trimmed.startsWith('/')) {
+    return EDS_MEDIA_PATH.test(trimmed.split('?')[0]);
+  }
   try {
-    const u = new URL(href);
-    if (!u.hostname.endsWith('.aem.live')) return false;
+    const u = new URL(trimmed);
+    if (!EDS_MEDIA_HOSTS.test(u.hostname)) return false;
     return EDS_MEDIA_PATH.test(u.pathname);
   } catch {
     return false;
@@ -39,9 +49,9 @@ function isLiveEdsMediaAssetUrl(href) {
  */
 function stripUrlQuery(href) {
   try {
-    const u = new URL(href);
+    const u = new URL(href, window.location.href);
     u.search = '';
-    return u.toString();
+    return href.startsWith('/') && !/^https?:/i.test(href) ? u.pathname : u.toString();
   } catch {
     const i = href.indexOf('?');
     return i >= 0 ? href.slice(0, i) : href;
@@ -64,7 +74,7 @@ function decorateLiveAssetMediaUrls(main) {
   [...main.querySelectorAll('a[href]')].forEach((a) => {
     if (a.closest('picture')) return;
     const raw = a.getAttribute('href');
-    if (!raw || !isLiveEdsMediaAssetUrl(raw)) return;
+    if (!isEdsMediaAssetReference(raw)) return;
     const href = stripUrlQuery(raw);
     const linkText = (a.textContent || '').trim();
     const alt = linkText && linkText !== raw.split('?')[0] && linkText !== href ? linkText : '';
@@ -73,7 +83,7 @@ function decorateLiveAssetMediaUrls(main) {
 
   const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
-      if (!node.nodeValue || !/\.aem\.live\/assets\/media_/i.test(node.nodeValue)) {
+      if (!node.nodeValue || !/\/assets\/media_[a-f0-9]/i.test(node.nodeValue)) {
         return NodeFilter.FILTER_REJECT;
       }
       if (node.parentElement && node.parentElement.closest(SKIP_TEXT_ANCESTORS)) {
@@ -88,7 +98,7 @@ function decorateLiveAssetMediaUrls(main) {
   textNodes.forEach((node) => {
     const text = node.nodeValue;
     const matches = [...text.matchAll(EDS_MEDIA_URL_RE)]
-      .filter((m) => isLiveEdsMediaAssetUrl(m[0]));
+      .filter((m) => isEdsMediaAssetReference(m[0]));
     if (!matches.length) return;
     const frag = document.createDocumentFragment();
     let idx = 0;
