@@ -872,6 +872,18 @@
   })();
 
   /**
+   * The assets index sometimes serializes empty cells as "0", "-", "n/a" etc.
+   * Treat those as no value so they don't render or match in search.
+   * @param {unknown} raw
+   * @returns {string}
+   */
+  function normalizeIndexValue(raw) {
+    const s = String(raw ?? '').trim();
+    if (!s) return '';
+    return /^(0|-|—|n\/?a|null|undefined|false)$/i.test(s) ? '' : s;
+  }
+
+  /**
    * assets-index `image` is a full URL; authors want it without query parameters.
    * @param {unknown} image
    * @returns {string}
@@ -1109,9 +1121,9 @@
     const q = document.getElementById('search-input').value.toLowerCase().trim();
     if (!q) return allAssets;
     return allAssets.filter(a =>
-      (a.title  || '').toLowerCase().includes(q) ||
-      (a.tags   || '').toLowerCase().includes(q) ||
-      (a['original-filename'] || '').toLowerCase().includes(q)
+      normalizeIndexValue(a.title).toLowerCase().includes(q) ||
+      normalizeIndexValue(a.tags).toLowerCase().includes(q) ||
+      normalizeIndexValue(a['original-filename']).toLowerCase().includes(q)
     );
   }
 
@@ -1150,8 +1162,10 @@
     }
 
     assets.forEach((asset) => {
-      const title = asset.title || asset['original-filename'] || 'Untitled';
-      const tags = asset.tags || '';
+      const title = normalizeIndexValue(asset.title)
+        || normalizeIndexValue(asset['original-filename'])
+        || 'Untitled';
+      const tags = normalizeIndexValue(asset.tags);
       const displaySrc = imageUrlWithoutQuery(asset.image);
       const copyUrl = displaySrc;
 
@@ -1165,12 +1179,13 @@
             </div>
           </div>`);
       } else {
+        const tagsMarkup = tags ? `<div class="asset-tags">${esc(tags)}</div>` : '';
         container.insertAdjacentHTML('beforeend', `
           <div class="asset-item">
             <img src="${esc(displaySrc)}" alt="${esc(title)}" loading="lazy">
             <div class="asset-meta">
               <div class="asset-title">${esc(title)}</div>
-              <div class="asset-tags">${esc(tags)}</div>
+              ${tagsMarkup}
             </div>
             <button type="button" class="copy-btn" data-copy-url="${esc(copyUrl)}">Copy URL</button>
           </div>`);
