@@ -811,6 +811,9 @@
   const API_UPLOAD_URL  = 'https://njrby7jjuf.execute-api.us-east-2.amazonaws.com/prod/generate-upload-url';
   const API_PUBLISH_URL = 'https://njrby7jjuf.execute-api.us-east-2.amazonaws.com/prod/publish-asset';
   const INDEX_URL       = 'https://main--nhhc--jfoxx.aem.live/assets-index.json';
+  const LIVE_ORIGIN     = (() => {
+    try { return new URL(INDEX_URL).origin; } catch { return ''; }
+  })();
 
   /**
    * assets-index `image` is a full URL; authors want it without query parameters.
@@ -828,6 +831,184 @@
       const i = raw.indexOf('?');
       return i >= 0 ? raw.slice(0, i) : raw;
     }
+  }
+
+  /**
+   * Normalize the publish-asset API response (path, preview URL, or full URL
+   * with query params) to a clean published URL on the live origin.
+   * @param {unknown} pathOrUrl
+   * @returns {string}
+   */
+  function toPublishedAssetUrl(pathOrUrl) {
+    const raw = String(pathOrUrl ?? '').trim();
+    if (!raw) return '';
+    if (!LIVE_ORIGIN) return imageUrlWithoutQuery(raw);
+    try {
+      const u = new URL(raw, LIVE_ORIGIN);
+      const live = new URL(LIVE_ORIGIN);
+      u.protocol = live.protocol;
+      u.hostname = live.hostname;
+      u.port = live.port;
+      u.search = '';
+      u.hash = '';
+      return u.toString();
+    } catch {
+      return raw;
+    }
+  }
+
+  /**
+   * After loadIndex, try to find the canonical `image` URL for the asset that
+   * was just published. Matches by published path or original filename.
+   * @param {string} publishedPath
+   * @param {string} originalFileName
+   * @returns {string}
+   */
+  function findIndexedAssetUrl(publishedPath, originalFileName) {
+    if (!Array.isArray(allAssets) || !allAssets.length) return '';
+    const norm = (s) => String(s ?? '').toLowerCase();
+    const path = norm(publishedPath);
+    const name = norm(originalFileName);
+    const found = allAssets.find((a) => {
+      if (path && (norm(a.path) === path || norm(a.image).includes(path))) return true;
+      if (name && norm(a['original-filename']) === name) return true;
+      return false;
+    });
+    return found ? imageUrlWithoutQuery(found.image) : '';
+  }
+
+  /**
+   * Recursively scan an API response for any `https://*.aem.live/assets/media_<hash>...`
+   * style URL. Returns the cleaned URL or '' if none found.
+   * @param {unknown} data
+   * @returns {string}
+   */
+  function pickKnownMediaUrl(data) {
+    const re = /https?:\/\/[^\s"'<>]*\.aem\.live\/assets\/media_[a-f0-9]+(?:\.[a-z0-9]+)?(?:\?[^\s"'<>]*)?/i;
+    let found = '';
+    const visit = (v) => {
+      if (found) return;
+      if (typeof v === 'string') {
+        const m = v.match(re);
+        if (m) found = m[0];
+        return;
+      }
+      if (Array.isArray(v)) { v.forEach(visit); return; }
+      if (v && typeof v === 'object') Object.values(v).forEach(visit);
+    };
+    visit(data);
+    return found ? imageUrlWithoutQuery(found) : '';
+  }
+
+  /**
+   * Fetch the published page that wraps an uploaded asset and scrape the DOM
+   * for the canonical /assets/media_<hash>.<ext> URL EDS serves it from.
+   * Tries a few path variations because we don't know whether `publishedPath`
+   * points at the asset directly or at a wrapping page.
+   * @param {string} publishedPath
+   * @returns {Promise<string>}
+   */
+  async function fetchMediaUrlFromPublishedPage(publishedPath) {
+    if (!publishedPath || !LIVE_ORIGIN) return '';
+
+    const baseNoExt = publishedPath.replace(/\.[^./]+$/, '');
+    const candidates = [...new Set([
+      `${LIVE_ORIGIN}${publishedPath}`,
+      `${LIVE_ORIGIN}${publishedPath}.plain.html`,
+      `${LIVE_ORIGIN}${baseNoExt}.plain.html`,
+      `${LIVE_ORIGIN}${baseNoExt}`,
+    ])];
+
+    const mediaPathRe = /\/assets\/media_[a-f0-9]+(?:\.[a-z0-9]+)?/i;
+
+    const findInSrcset = (srcset) => {
+      const first = String(srcset).split(',')[0]?.trim().split(/\s+/)[0] || '';
+      return mediaPathRe.test(first) ? first : '';
+    };
+
+    const findInDoc = (doc) => {
+      const els = doc.querySelectorAll('picture source[srcset], picture img[src], img[src], source[srcset]');
+      for (const el of els) {
+        const src = el.getAttribute('src');
+        if (src && mediaPathRe.test(src)) return src;
+        const ss = el.getAttribute('srcset');
+        if (ss) {
+          const hit = findInSrcset(ss);
+          if (hit) return hit;
+        }
+      }
+      return '';
+    };
+
+    for (const url of candidates) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const res = await fetch(url, { redirect: 'follow', cache: 'no-store' });
+        if (!res.ok) continue;
+        const ct = res.headers.get('content-type') || '';
+
+        if (ct.startsWith('image/')) {
+          if (mediaPathRe.test(res.url)) return imageUrlWithoutQuery(res.url);
+          continue;
+        }
+
+        if (/html|xml/i.test(ct)) {
+          // eslint-disable-next-line no-await-in-loop
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          const fromDom = findInDoc(doc);
+          if (fromDom) {
+            const abs = fromDom.startsWith('http') ? fromDom : `${LIVE_ORIGIN}${fromDom}`;
+            return imageUrlWithoutQuery(abs);
+          }
+          const m = html.match(/(?:https?:\/\/[^\s"'<>]*\.aem\.live)?\/assets\/media_[a-f0-9]+(?:\.[a-z0-9]+)?/i);
+          if (m) {
+            const abs = m[0].startsWith('http') ? m[0] : `${LIVE_ORIGIN}${m[0]}`;
+            return imageUrlWithoutQuery(abs);
+          }
+        }
+      } catch {
+        // try next candidate
+      }
+    }
+    return '';
+  }
+
+  /**
+   * Resolve the canonical media_<hash> URL for a freshly published asset by
+   * trying, in order on each attempt: (1) any URL the API returned directly,
+   * (2) scraping the published page DOM, (3) looking it up in the refreshed
+   * assets index. Retries because EDS publish + indexer can lag a few seconds.
+   * @param {object} pubData publish-asset API response
+   * @param {string} fileName original file name (for index match fallback)
+   * @param {{ tries?: number, intervalMs?: number, onAttempt?: (i: number) => void }} [opts]
+   * @returns {Promise<string>}
+   */
+  async function resolvePublishedMediaUrl(pubData, fileName, opts = {}) {
+    const { tries = 8, intervalMs = 1500, onAttempt } = opts;
+
+    const direct = pickKnownMediaUrl(pubData);
+    if (direct) return direct;
+
+    const publishedPath = pubData && pubData.publishedPath;
+    if (!publishedPath) return '';
+
+    for (let i = 0; i < tries; i += 1) {
+      if (onAttempt) onAttempt(i + 1);
+
+      // eslint-disable-next-line no-await-in-loop
+      const fromPage = await fetchMediaUrlFromPublishedPage(publishedPath);
+      if (fromPage) return fromPage;
+
+      // eslint-disable-next-line no-await-in-loop
+      await loadIndex({ bustCache: true });
+      const indexed = findIndexedAssetUrl(publishedPath, fileName);
+      if (indexed) return indexed;
+
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+    return '';
   }
 
   let allAssets   = [];
@@ -879,9 +1060,10 @@
   }
 
   // ── Load index ─────────────────────────────────────────
-  async function loadIndex() {
+  async function loadIndex(opts = {}) {
     try {
-      const res  = await fetch(`${INDEX_URL}?limit=500`);
+      const params = `limit=500${opts.bustCache ? `&_=${Date.now()}` : ''}`;
+      const res  = await fetch(`${INDEX_URL}?${params}`, opts.bustCache ? { cache: 'no-store' } : undefined);
       if (!res.ok) throw new Error(`Index returned ${res.status}`);
       const json = await res.json();
       allAssets  = json.data || [];
@@ -1057,13 +1239,38 @@
         throw new Error(pubData.error || `HTTP ${pubRes.status}`);
       }
 
+      // eslint-disable-next-line no-console
+      console.log('[asset-browser] publish-asset response:', pubData);
+
+      // Show a placeholder URL immediately so authors see something
+      showResult(toPublishedAssetUrl(pubData.publishedPath));
+      setProgress(true, 'Resolving published URL…', 95);
+
+      const canonicalUrl = await resolvePublishedMediaUrl(
+        pubData,
+        urlData.fileName || selectedFile.name,
+        {
+          tries: 8,
+          intervalMs: 1500,
+          onAttempt: (n) => setProgress(true, `Resolving published URL… (${n})`, 95),
+        },
+      );
+
       setProgress(true, 'Done', 100);
       setTimeout(() => setProgress(false), 600);
 
-      showResult(pubData.publishedPath);
+      if (canonicalUrl) {
+        showResult(canonicalUrl);
+      } else {
+        showError(
+          'Asset published, but the canonical /assets/media_<hash> URL is not '
+          + 'yet available. The shown URL is the source path; the resolved URL '
+          + 'will appear in the search panel once EDS finishes indexing.',
+        );
+      }
 
-      // Refresh index so new asset appears in search
-      await loadIndex();
+      // Refresh search panel so the new asset is visible there too
+      await loadIndex({ bustCache: true });
 
     } catch (err) {
       setProgress(false);
@@ -1109,12 +1316,13 @@
     box.classList.remove('visible');
   }
 
-  function showResult(path) {
+  function showResult(pathOrUrl) {
     const box  = document.getElementById('result-box');
     const text = document.getElementById('result-path');
-    text.textContent = path;
+    const url  = toPublishedAssetUrl(pathOrUrl);
+    text.textContent = url;
     box.classList.add('visible');
-    document.getElementById('result-copy-btn').onclick = () => copyToClipboard(path);
+    document.getElementById('result-copy-btn').onclick = () => copyToClipboard(url);
   }
 
   function clearResult() {
