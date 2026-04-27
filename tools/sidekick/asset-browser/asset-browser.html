@@ -65,7 +65,8 @@
     #app {
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      height: 100%;
+      min-height: 0;
     }
 
     header {
@@ -766,14 +767,15 @@
 
     .toast {
       position: fixed;
-      bottom: 20px;
+      bottom: 16px;
       left: 50%;
       transform: translateX(-50%) translateY(12px);
+      z-index: 1000;
       background: var(--text);
       color: var(--surface);
       font-size: 13px;
       font-weight: 600;
-      padding: 10px 18px;
+      padding: 8px 16px;
       border-radius: var(--radius-lg);
       box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
       opacity: 0;
