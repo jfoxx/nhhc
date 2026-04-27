@@ -894,7 +894,7 @@
     }
 
     assets.forEach(asset => {
-      const imgSrc  = asset['cloudfront-url'] || '';
+      const imgSrc  = asset.image || '';
       const title   = asset.title || asset['original-filename'] || 'Untitled';
       const tags    = asset.tags  || '';
       const path    = asset.path  || '';
