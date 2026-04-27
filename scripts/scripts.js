@@ -1,5 +1,6 @@
 import {
   buildBlock,
+  createOptimizedPicture,
   getMetadata,
   loadHeader,
   loadFooter,
@@ -13,6 +14,93 @@ import {
   loadSections,
   loadCSS,
 } from './aem.js';
+
+const EDS_MEDIA_PATH = /^\/assets\/media_[a-f0-9]+/i;
+const EDS_MEDIA_URL_RE = /https?:\/\/[^\s<>"')]*\.aem\.live\/assets\/media_[a-f0-9]+(?:\.[a-z0-9]+)?(?:\?[^\s<>"')]*)?/gi;
+const SKIP_TEXT_ANCESTORS = 'a, picture, script, style, code, pre, textarea, title, noscript';
+
+/**
+ * @param {string} href
+ * @returns {boolean}
+ */
+function isLiveEdsMediaAssetUrl(href) {
+  try {
+    const u = new URL(href);
+    if (!u.hostname.endsWith('.aem.live')) return false;
+    return EDS_MEDIA_PATH.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * @param {string} href
+ * @returns {string}
+ */
+function stripUrlQuery(href) {
+  try {
+    const u = new URL(href);
+    u.search = '';
+    return u.toString();
+  } catch {
+    const i = href.indexOf('?');
+    return i >= 0 ? href.slice(0, i) : href;
+  }
+}
+
+/**
+ * Turns pasted live EDS media URLs (in links or in plain text) into the same
+ * picture markup createOptimizedPicture produces for local media. Handles
+ * URLs whether they sit inside an anchor, are the only content of a
+ * paragraph, or appear inline with surrounding text.
+ * @param {Element} main
+ */
+function decorateLiveAssetMediaUrls(main) {
+  const breakpoints = [
+    { media: '(min-width: 600px)', width: '2000' },
+    { width: '750' },
+  ];
+
+  [...main.querySelectorAll('a[href]')].forEach((a) => {
+    if (a.closest('picture')) return;
+    const raw = a.getAttribute('href');
+    if (!raw || !isLiveEdsMediaAssetUrl(raw)) return;
+    const href = stripUrlQuery(raw);
+    const linkText = (a.textContent || '').trim();
+    const alt = linkText && linkText !== raw.split('?')[0] && linkText !== href ? linkText : '';
+    a.replaceWith(createOptimizedPicture(href, alt, false, breakpoints));
+  });
+
+  const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue || !/\.aem\.live\/assets\/media_/i.test(node.nodeValue)) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      if (node.parentElement && node.parentElement.closest(SKIP_TEXT_ANCESTORS)) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  const textNodes = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) textNodes.push(n);
+
+  textNodes.forEach((node) => {
+    const text = node.nodeValue;
+    const matches = [...text.matchAll(EDS_MEDIA_URL_RE)]
+      .filter((m) => isLiveEdsMediaAssetUrl(m[0]));
+    if (!matches.length) return;
+    const frag = document.createDocumentFragment();
+    let idx = 0;
+    matches.forEach((m) => {
+      if (m.index > idx) frag.append(text.slice(idx, m.index));
+      frag.append(createOptimizedPicture(stripUrlQuery(m[0]), '', false, breakpoints));
+      idx = m.index + m[0].length;
+    });
+    if (idx < text.length) frag.append(text.slice(idx));
+    node.parentNode.replaceChild(frag, node);
+  });
+}
 
 /**
  * Builds hero block and prepends to main in a new section.
@@ -82,6 +170,7 @@ function buildAutoBlocks(main) {
  */
 // eslint-disable-next-line import/prefer-default-export
 export function decorateMain(main) {
+  decorateLiveAssetMediaUrls(main);
   decorateIcons(main);
   buildAutoBlocks(main);
   decorateSections(main);
