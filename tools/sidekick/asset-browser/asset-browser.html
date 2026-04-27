@@ -232,7 +232,7 @@
 
     .asset-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 8px;
     }
 
@@ -893,18 +893,18 @@
       return;
     }
 
-    assets.forEach(asset => {
-      const imgSrc  = asset.image || '';
-      const title   = asset.title || asset['original-filename'] || 'Untitled';
-      const tags    = asset.tags  || '';
-      const path    = asset.path  || '';
+    assets.forEach((asset) => {
+      const imgSrc = asset.image || asset['cloudfront-url'] || '';
+      const title = asset.title || asset['original-filename'] || 'Untitled';
+      const tags = asset.tags || '';
+      const copyUrl = imgSrc;
 
       if (currentView === 'grid') {
         container.insertAdjacentHTML('beforeend', `
           <div class="asset-item" title="${esc(title)}">
             <img src="${esc(imgSrc)}" alt="${esc(title)}" loading="lazy">
             <div class="asset-overlay">
-              <button type="button" class="copy-btn" data-path="${esc(path)}">Copy URL</button>
+              <button type="button" class="copy-btn" data-url="${esc(copyUrl)}">Copy URL</button>
               <div class="asset-name">${esc(title)}</div>
             </div>
           </div>`);
@@ -916,15 +916,20 @@
               <div class="asset-title">${esc(title)}</div>
               <div class="asset-tags">${esc(tags)}</div>
             </div>
-            <button type="button" class="copy-btn" data-path="${esc(path)}">Copy URL</button>
+            <button type="button" class="copy-btn" data-url="${esc(copyUrl)}">Copy URL</button>
           </div>`);
       }
     });
 
-    container.querySelectorAll('.copy-btn').forEach(btn => {
+    container.querySelectorAll('.copy-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        copyToClipboard(btn.dataset.path);
+        const url = btn.dataset.url || '';
+        if (!url) {
+          showToast('No image URL in index');
+          return;
+        }
+        copyToClipboard(url);
       });
     });
   }
