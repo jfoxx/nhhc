@@ -679,6 +679,52 @@
 
     .error-box.visible { display: block; }
 
+    .search-footer {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: center;
+      padding: 8px 14px 10px;
+      background: var(--surface);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .refresh-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      padding: 4px 6px;
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: var(--radius);
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .refresh-link:hover { color: var(--accent-hover); text-decoration: underline; }
+
+    .refresh-link:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 1px;
+    }
+
+    .refresh-link:disabled { opacity: 0.55; cursor: progress; text-decoration: none; }
+
+    .refresh-link svg {
+      width: 12px;
+      height: 12px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .refresh-link.refreshing svg { animation: spin 0.75s linear infinite; }
+
     .toast {
       position: fixed;
       bottom: 20px;
@@ -742,6 +788,16 @@
         <span>Loading index…</span>
       </div>
       <div class="asset-grid" id="asset-container" style="display:none"></div>
+    </div>
+
+    <div class="search-footer">
+      <button type="button" class="refresh-link" id="refresh-link" title="Force-reload assets-index.json">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M13.5 8a5.5 5.5 0 1 1-1.61-3.89"/>
+          <polyline points="13.5 2 13.5 5 10.5 5"/>
+        </svg>
+        <span id="refresh-link-label">Refresh results</span>
+      </button>
     </div>
   </div>
 
@@ -1348,7 +1404,24 @@
       .replace(/>/g, '&gt;');
   }
 
-  // ── Init ───────────────────────────────────────────────
+  document.getElementById('refresh-link').addEventListener('click', async () => {
+    const btn = document.getElementById('refresh-link');
+    const label = document.getElementById('refresh-link-label');
+    if (btn.disabled) return;
+    const original = label.textContent;
+    btn.disabled = true;
+    btn.classList.add('refreshing');
+    label.textContent = 'Refreshing…';
+    try {
+      await loadIndex({ bustCache: true });
+      showToast('Results refreshed');
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('refreshing');
+      label.textContent = original;
+    }
+  });
+
   loadIndex();
 </script>
 </body>
